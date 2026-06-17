@@ -4,6 +4,22 @@ import { setTitleAndNotes, moveToList } from "swift:../../swift/AppleReminders";
 
 import { List, Reminder, useData } from "../hooks/useData";
 
+function normalizeListId(value: unknown): string {
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (value && typeof value === "object" && "id" in value && typeof value.id === "string") {
+    return value.id;
+  }
+
+  if (value && typeof value === "object" && "value" in value && typeof value.value === "string") {
+    return value.value;
+  }
+
+  return "";
+}
+
 type EditReminderProps = {
   reminder: Reminder;
   mutate: MutatePromise<{ reminders: Reminder[]; lists: List[] } | undefined>;
@@ -14,11 +30,12 @@ export default function EditReminder({ reminder, mutate }: EditReminderProps) {
   const { data } = useData();
   const lists = data?.lists || [];
 
-  const { itemProps, handleSubmit } = useForm<{ title: string; notes: string; listId: string }>({
+  const { itemProps, handleSubmit, values, setValue } = useForm<{ title: string; notes: string; listId: string }>({
     async onSubmit(values) {
       try {
         const titleOrNotesChanged = values.title !== reminder.title || values.notes !== reminder.notes;
-        const listChanged = values.listId !== (reminder.list?.id || "");
+        const listId = normalizeListId(values.listId);
+        const listChanged = listId !== (reminder.list?.id || "");
 
         if (titleOrNotesChanged) {
           await mutate(setTitleAndNotes({ reminderId: reminder.id, title: values.title, notes: values.notes }), {
@@ -39,7 +56,7 @@ export default function EditReminder({ reminder, mutate }: EditReminderProps) {
         }
 
         if (listChanged) {
-          await mutate(moveToList({ reminderId: reminder.id, listId: values.listId }), {
+          await mutate(moveToList({ reminderId: reminder.id, listId }), {
             optimisticUpdate(data) {
               if (!data) return;
 
@@ -49,7 +66,7 @@ export default function EditReminder({ reminder, mutate }: EditReminderProps) {
                   if (reminder.id === r.id) {
                     return {
                       ...r,
-                      list: data.lists.find((l) => l.id === values.listId) || null,
+                      list: data.lists.find((l) => l.id === listId) || null,
                     };
                   }
                   return r;
@@ -77,6 +94,8 @@ export default function EditReminder({ reminder, mutate }: EditReminderProps) {
       title: FormValidation.Required,
     },
   });
+  const selectedListId = normalizeListId(values.listId);
+  const dropdownListId = lists.some((list) => list.id === selectedListId) ? selectedListId : "";
 
   return (
     <Form
@@ -88,7 +107,8 @@ export default function EditReminder({ reminder, mutate }: EditReminderProps) {
     >
       <Form.TextField {...itemProps.title} title="Title" placeholder="New Reminder" />
       <Form.TextArea {...itemProps.notes} title="Notes" placeholder="Add some notes" />
-      <Form.Dropdown {...itemProps.listId} title="List">
+      <Form.Dropdown id="listId" title="List" value={dropdownListId} onChange={(value) => setValue("listId", value)}>
+        <Form.Dropdown.Item title="No List" value="" />
         {lists.map((list) => (
           <Form.Dropdown.Item
             key={list.id}

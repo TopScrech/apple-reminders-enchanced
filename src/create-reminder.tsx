@@ -59,6 +59,20 @@ type CreateReminderValues = {
   radius: string;
 };
 
+function normalizeListId(value: unknown): string | undefined {
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (value && typeof value === "object" && "id" in value && typeof value.id === "string") {
+    return value.id;
+  }
+
+  if (value && typeof value === "object" && "value" in value && typeof value.value === "string") {
+    return value.value;
+  }
+}
+
 type CreateReminderFormProps = {
   draftValues?: Partial<CreateReminderValues>;
   listId?: string;
@@ -80,11 +94,13 @@ export function CreateReminderForm({ draftValues, listId, mutate }: CreateRemind
   const defaultList = data?.lists.find((list) => list.isDefault);
 
   const { selectDefaultList, selectTodayAsDefault } = getPreferenceValues<Preferences.CreateReminder>();
+  const initialFilterListId = normalizeListId(listId);
+  const draftListId = normalizeListId(draftValues?.listId);
   let initialListId;
-  if (listId !== "all") {
-    initialListId = listId;
-  } else if (draftValues?.listId) {
-    initialListId = draftValues.listId;
+  if (initialFilterListId && data?.lists.some((list) => list.id === initialFilterListId)) {
+    initialListId = initialFilterListId;
+  } else if (draftListId && data?.lists.some((list) => list.id === draftListId)) {
+    initialListId = draftListId;
   } else if (selectDefaultList && defaultList) {
     initialListId = defaultList.id;
   }
@@ -102,8 +118,11 @@ export function CreateReminderForm({ draftValues, listId, mutate }: CreateRemind
     try {
       const payload: NewReminder = {
         title: values.title,
-        listId: values.listId,
       };
+      const listId = normalizeListId(values.listId);
+      if (listId) {
+        payload.listId = listId;
+      }
 
       if (values.notes) {
         payload.notes = values.notes;
@@ -268,6 +287,8 @@ export function CreateReminderForm({ draftValues, listId, mutate }: CreateRemind
   }
 
   const hasLocations = locations.length > 0;
+  const selectedListId = normalizeListId(values.listId);
+  const dropdownListId = data?.lists.some((list) => list.id === selectedListId) ? selectedListId : "";
   const isFieldEnabled = (fieldId: string) =>
     formLayout.some((item) => item.type === "field" && item.id === fieldId && item.enabled);
   const renderFieldNodes = (fieldId: string) => {
@@ -276,7 +297,14 @@ export function CreateReminderForm({ draftValues, listId, mutate }: CreateRemind
         return [<Form.TextField key="title" {...itemProps.title} title="Title" placeholder="New Reminder" />];
       case "list":
         return [
-          <Form.Dropdown key="listId" {...itemProps.listId} title="List" storeValue>
+          <Form.Dropdown
+            id="listId"
+            key="listId"
+            title="List"
+            value={dropdownListId}
+            onChange={(value) => setValue("listId", value)}
+          >
+            <Form.Dropdown.Item title="Default List" value="" />
             {data?.lists.map((list) => {
               return (
                 <Form.Dropdown.Item

@@ -7,9 +7,26 @@ import { CreateReminderForm } from "./create-reminder";
 import { useData } from "./hooks/useData";
 import useViewReminders from "./hooks/useViewReminders";
 
+function normalizeListId(value: unknown): string {
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (value && typeof value === "object" && "id" in value && typeof value.id === "string") {
+    return value.id;
+  }
+
+  if (value && typeof value === "object" && "value" in value && typeof value.value === "string") {
+    return value.value;
+  }
+
+  return "today";
+}
+
 export default function Command() {
   const { displayCompletionDate } = getPreferenceValues<Preferences.MyReminders>();
-  const [listId, setListId] = useCachedState<string>("view", "today");
+  const [cachedListId, setListId] = useCachedState<unknown>("view", "today");
+  const listId = normalizeListId(cachedListId);
   const [newReminderTitle, setNewReminderTitle] = useState("");
 
   const { data, isLoading, mutate } = useData();
