@@ -116,6 +116,7 @@ struct NewReminder: Decodable {
   let title: String
   let listId: String?
   let notes: String?
+  let url: String?
   let dueDate: String?
   let priority: String?
   let recurrence: Recurrence?
@@ -136,7 +137,20 @@ struct Recurrence: Decodable {
 
   reminder.title = newReminder.title
 
-  if let notes = newReminder.notes {
+  if let urlString = newReminder.url, let url = URL(string: urlString) {
+    reminder.url = url
+  }
+
+  var notes = newReminder.notes
+  if let urlString = newReminder.url {
+    if let existingNotes = notes, !existingNotes.contains(urlString) {
+      notes = "\(existingNotes)\n\(urlString)"
+    } else if notes == nil {
+      notes = urlString
+    }
+  }
+
+  if let notes {
     reminder.notes = notes
   }
 

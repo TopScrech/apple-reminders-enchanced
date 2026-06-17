@@ -13,6 +13,10 @@ type Input = {
    */
   notes?: string;
   /**
+   * Optional URL to attach to the reminder.
+   */
+  url?: string;
+  /**
    * Optional due date. Only include this when the user explicitly asks for a date, day, time, or schedule, such as "today", "tomorrow", "tonight", "this weekend", "next week", "in 3 days", "end of day", or an explicit clock time. Omit this for title-only, Inbox, Backlog, or generic capture reminders. Must include a calendar date when present. Use YYYY-MM-DD for full-day reminders or ISO with time (YYYY-MM-DDTHH:mm:ss.sssZ). Time-only values (e.g. "10:00:00") are invalid and will fail. When the user mentions a time-of-day word with a date or day, use sensible defaults for that timeframe (e.g "8am" for "morning", "1pm" for "afternoon", "6pm" for "evening"). A number with "a" or "p" appended (e.g. "1p" or "8a") should be treated as AM or PM. If the user includes a date but didn't include a specific time, assume it's a full day reminder.
    */
   dueDate?: string;

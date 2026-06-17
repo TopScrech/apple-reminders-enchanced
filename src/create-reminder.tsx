@@ -13,7 +13,7 @@ import {
   PopToRootType,
 } from "@raycast/api";
 import { FormValidation, MutatePromise, useForm } from "@raycast/utils";
-import { addMilliseconds, format, startOfToday } from "date-fns";
+import { addDays, addMilliseconds, format, nextMonday, nextSaturday, startOfToday } from "date-fns";
 import { ReactElement, useRef } from "react";
 import { createReminder } from "swift:../swift/AppleReminders";
 
@@ -32,6 +32,7 @@ export type NewReminder = {
   title: string;
   listId?: string;
   notes?: string;
+  url?: string;
   dueDate?: string;
   priority?: string;
   recurrence?: {
@@ -47,6 +48,7 @@ export type NewReminder = {
 type CreateReminderValues = {
   title: string;
   notes: string;
+  url: string;
   dueDate: Date | null;
   priority: string;
   listId: string;
@@ -70,6 +72,36 @@ function normalizeListId(value: unknown): string | undefined {
 
   if (value && typeof value === "object" && "value" in value && typeof value.value === "string") {
     return value.value;
+  }
+}
+
+function fullDayDate(date: Date) {
+  return addMilliseconds(date, 1);
+}
+
+function thisWeekend() {
+  const today = new Date();
+  const day = today.getDay();
+
+  if (day === 0 || day === 6) {
+    return fullDayDate(startOfToday());
+  }
+
+  return fullDayDate(nextSaturday(today));
+}
+
+function validateUrl(value: string | undefined) {
+  if (!value) {
+    return;
+  }
+
+  try {
+    const url = new URL(value);
+    if (!url.protocol) {
+      return "Enter a valid URL";
+    }
+  } catch {
+    return "Enter a valid URL";
   }
 }
 
@@ -126,6 +158,11 @@ export function CreateReminderForm({ draftValues, listId, mutate }: CreateRemind
 
       if (values.notes) {
         payload.notes = values.notes;
+      }
+
+      const url = values.url.trim();
+      if (url) {
+        payload.url = url;
       }
 
       if (values.dueDate) {
@@ -192,6 +229,7 @@ export function CreateReminderForm({ draftValues, listId, mutate }: CreateRemind
 
       setValue("title", "");
       setValue("notes", "");
+      setValue("url", "");
       setValue("location", "");
       setValue("address", "");
       setValue("radius", "");
@@ -213,6 +251,7 @@ export function CreateReminderForm({ draftValues, listId, mutate }: CreateRemind
     initialValues: {
       title: draftValues?.title ?? "",
       notes: draftValues?.notes ?? "",
+      url: draftValues?.url ?? "",
       dueDate: initialDueDate,
       priority: draftValues?.priority,
       listId: initialListId,
@@ -230,6 +269,7 @@ export function CreateReminderForm({ draftValues, listId, mutate }: CreateRemind
         if (!values.isRecurring) return;
         return getIntervalValidationError(value);
       },
+      url: validateUrl,
       radius: (value) => {
         if (!values.address) return;
         if (isNaN(Number(value))) return "Radius must be a number";
@@ -248,6 +288,11 @@ export function CreateReminderForm({ draftValues, listId, mutate }: CreateRemind
     } finally {
       submitOptionsRef.current = undefined;
     }
+  }
+
+  function setDueDate(date: Date) {
+    setValue("dueDate", date);
+    focus("dueDate");
   }
 
   let recurrenceDescription = "";
@@ -319,6 +364,8 @@ export function CreateReminderForm({ draftValues, listId, mutate }: CreateRemind
         ];
       case "notes":
         return [<Form.TextArea key="notes" {...itemProps.notes} title="Notes" placeholder="Add some notes" />];
+      case "url":
+        return [<Form.TextField key="url" {...itemProps.url} title="URL" placeholder="https://example.com" />];
       case "dueDate":
         return [<Form.DatePicker key="dueDate" {...itemProps.dueDate} title="Date" />];
       case "recurrence":
@@ -437,6 +484,25 @@ export function CreateReminderForm({ draftValues, listId, mutate }: CreateRemind
             icon={Icon.Plus}
             onSubmit={(values) => submitWithOptions(values as CreateReminderValues)}
             title="Create Reminder"
+          />
+          <Action
+            icon={Icon.Calendar}
+            onAction={() => setDueDate(fullDayDate(startOfToday()))}
+            shortcut={{ modifiers: ["cmd"], key: "t" }}
+            title="Today"
+          />
+          <Action
+            icon={Icon.Calendar}
+            onAction={() => setDueDate(fullDayDate(addDays(startOfToday(), 1)))}
+            shortcut={{ modifiers: ["cmd", "opt"], key: "t" }}
+            title="Tomorrow"
+          />
+          <Action icon={Icon.Calendar} onAction={() => setDueDate(thisWeekend())} title="This Weekend" />
+          <Action
+            icon={Icon.Calendar}
+            onAction={() => setDueDate(fullDayDate(nextMonday(new Date())))}
+            shortcut={{ modifiers: ["cmd", "opt"], key: "k" }}
+            title="Next Week"
           />
           <Action.SubmitForm
             icon={Icon.Window}
