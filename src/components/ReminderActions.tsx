@@ -64,7 +64,7 @@ export default function ReminderActions({ reminder, listId, viewProps, mutate }:
           },
         },
       });
-    } catch (error) {
+    } catch {
       await showToast({
         style: Toast.Style.Failure,
         title: `Unable to mark reminder as ${reminder.isCompleted ? "incomplete" : "complete"}`,
@@ -96,8 +96,7 @@ export default function ReminderActions({ reminder, listId, viewProps, mutate }:
         title: priority ? "Set priority" : "Removed priority",
         message: priority ? `Changed to ${priority}` : "",
       });
-    } catch (error) {
-      console.error(error);
+    } catch {
       await showToast({
         style: Toast.Style.Failure,
         title: `Unable to set priority`,
@@ -133,7 +132,7 @@ export default function ReminderActions({ reminder, listId, viewProps, mutate }:
         title: date ? "Updated due date" : "Removed due date",
         message: date ? `Now due on ${format(date, "EEEE dd MMMM")}` : "",
       });
-    } catch (error) {
+    } catch {
       await showToast({
         style: Toast.Style.Failure,
         title: "Unable to update due date",
@@ -304,7 +303,7 @@ export default function ReminderActions({ reminder, listId, viewProps, mutate }:
 
         {viewProps.groupBy ? (
           <ActionPanel.Submenu
-            title="Group By"
+            title="Group by"
             icon={Icon.AppWindowGrid3x3}
             shortcut={{ modifiers: ["cmd", "shift"], key: "g" }}
           >
@@ -323,7 +322,7 @@ export default function ReminderActions({ reminder, listId, viewProps, mutate }:
         ) : null}
 
         <ActionPanel.Submenu
-          title="Sort By"
+          title="Sort by"
           icon={Icon.BulletPoints}
           shortcut={{ modifiers: ["cmd", "shift"], key: "s" }}
         >
@@ -342,7 +341,7 @@ export default function ReminderActions({ reminder, listId, viewProps, mutate }:
 
         {viewProps.orderBy ? (
           <ActionPanel.Submenu
-            title="Order By"
+            title="Order by"
             icon={viewProps.orderBy.value === "desc" ? Icon.ArrowDown : Icon.ArrowUp}
             shortcut={{ modifiers: ["cmd", "shift"], key: "o" }}
           >

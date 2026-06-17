@@ -95,7 +95,7 @@ export default function Command() {
         title: priority ? "Set priority" : "Removed priority",
         message: priority ? `Changed to ${priority}` : "",
       });
-    } catch (error) {
+    } catch {
       await showToast({
         style: Toast.Style.Failure,
         title: `Unable to set priority`,
@@ -111,7 +111,7 @@ export default function Command() {
         style: Toast.Style.Success,
         title: date ? "Set due date" : "Removed due date",
       });
-    } catch (error) {
+    } catch {
       await showToast({
         style: Toast.Style.Failure,
         title: `Unable to set due date`,
@@ -128,7 +128,7 @@ export default function Command() {
         title: "Deleted Reminder",
         message: reminder.title,
       });
-    } catch (error) {
+    } catch {
       await showToast({
         style: Toast.Style.Failure,
         title: "Unable to delete reminder",
@@ -200,7 +200,7 @@ export default function Command() {
                 title: "Marked reminder as complete",
                 message: reminder.title,
               });
-            } catch (error) {
+            } catch {
               await showToast({
                 style: Toast.Style.Failure,
                 title: "Unable to mark reminder as complete",
@@ -271,7 +271,7 @@ export default function Command() {
                         title: reminder.isCompleted ? "Marked reminder as incomplete" : "Completed Reminder",
                         message: reminder.title,
                       });
-                    } catch (error) {
+                    } catch {
                       await showToast({
                         style: Toast.Style.Failure,
                         title: `Unable to mark reminder as ${reminder.isCompleted ? "incomplete" : "complete"}`,

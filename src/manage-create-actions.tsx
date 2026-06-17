@@ -200,7 +200,7 @@ export default function Command() {
                   }
                 />
                 <Action
-                  title={action.enabled ? "Turn Off" : "Turn On"}
+                  title={action.enabled ? "Turn off" : "Turn on"}
                   icon={action.enabled ? Icon.XMarkCircle : Icon.CheckCircle}
                   onAction={() =>
                     setValue(
@@ -209,7 +209,7 @@ export default function Command() {
                   }
                 />
                 <Action
-                  title="Move Up"
+                  title="Move up"
                   icon={Icon.ArrowUp}
                   shortcut={{ modifiers: ["cmd", "shift"], key: "arrowUp" }}
                   onAction={() => setValue(moveAction(actions, index, -1))}

@@ -54,7 +54,7 @@ export default function CustomizeCreateReminderForm() {
                       onAction={() => setValue(insertSeparatorAfter(layout, index))}
                     />
                     <Action
-                      title="Move Up"
+                      title="Move up"
                       icon={Icon.ArrowUp}
                       shortcut={{ modifiers: ["cmd", "shift"], key: "arrowUp" }}
                       onAction={() => setValue(moveLayoutItem(layout, index, -1))}
@@ -116,7 +116,7 @@ export default function CustomizeCreateReminderForm() {
                   />
                   {canToggle ? (
                     <Action
-                      title={item.enabled ? "Turn Off" : "Turn On"}
+                      title={item.enabled ? "Turn off" : "Turn on"}
                       icon={item.enabled ? Icon.XMarkCircle : Icon.CheckCircle}
                       onAction={() =>
                         setValue(
@@ -133,7 +133,7 @@ export default function CustomizeCreateReminderForm() {
                     />
                   ) : null}
                   <Action
-                    title="Move Up"
+                    title="Move up"
                     icon={Icon.ArrowUp}
                     shortcut={{ modifiers: ["cmd", "shift"], key: "arrowUp" }}
                     onAction={() => setValue(moveLayoutItem(layout, index, -1))}
