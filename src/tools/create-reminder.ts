@@ -25,6 +25,10 @@ type Input = {
    */
   priority?: string;
   /**
+   * Whether to mark the reminder as flagged. Only include this when the user explicitly asks to flag or unflag a reminder.
+   */
+  isFlagged?: boolean;
+  /**
    * The list ID to add the reminder to. Note that the user can prepend the "#" or "@" symbols to list names, for example, "#work" or "@work".
    */
   listId?: string;

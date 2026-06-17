@@ -46,6 +46,15 @@ export default function ReminderListItem({
     });
   }
 
+  if (reminder.isFlagged) {
+    accessories.push({
+      icon: { source: Icon.Flag, tintColor: Color.Orange },
+      tooltip: "Flagged",
+    });
+
+    keywords.push("flagged");
+  }
+
   if (reminder.dueDate) {
     const { dueDate } = reminder;
     accessories.push({

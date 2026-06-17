@@ -17,6 +17,7 @@ import { addWeeks, endOfWeek, format, startOfToday, startOfTomorrow, startOfWeek
 import { useMemo } from "react";
 import {
   deleteReminder as apiDeleteReminder,
+  setFlaggedStatus,
   setPriorityStatus,
   toggleCompletionStatus,
   setDueDate as setReminderDueDate,
@@ -99,6 +100,24 @@ export default function Command() {
       await showToast({
         style: Toast.Style.Failure,
         title: `Unable to set priority`,
+      });
+    }
+  }
+
+  async function setFlagged(reminder: Reminder, isFlagged: boolean) {
+    try {
+      await setFlaggedStatus({ reminderId: reminder.id, isFlagged });
+      await mutate();
+      await showToast({
+        style: Toast.Style.Success,
+        title: isFlagged ? "Flagged reminder" : "Removed flag",
+        message: reminder.title,
+      });
+    } catch {
+      await showToast({
+        style: Toast.Style.Failure,
+        title: isFlagged ? "Unable to flag reminder" : "Unable to remove flag",
+        message: reminder.title,
       });
     }
   }
@@ -327,6 +346,12 @@ export default function Command() {
                     onAction={() => setPriority(reminder.id, "low")}
                   />
                 </MenuBarExtra.Submenu>
+
+                <MenuBarExtra.Item
+                  title={reminder.isFlagged ? "Remove Flag" : "Flag Reminder"}
+                  icon={Icon.Flag}
+                  onAction={() => setFlagged(reminder, !reminder.isFlagged)}
+                />
 
                 <MenuBarExtra.Item
                   title="Delete Reminder…"

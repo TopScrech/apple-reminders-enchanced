@@ -170,7 +170,7 @@ extension EKReminderPriority {
 }
 
 extension EKReminder {
-  func toStruct() -> Reminder {
+  func toStruct(isFlaggedOverride: Bool? = nil) -> Reminder {
     var dueDateString: String = ""
     if let dueDateComponents,
       let dueDate = Calendar.current.date(from: dueDateComponents)
@@ -248,12 +248,85 @@ extension EKReminder {
       openUrl: "x-apple-reminderkit://REMCDReminder/\(self.calendarItemIdentifier)",
       attachedUrls: uniqueAttachedUrls,
       title: self.title ?? "", notes: self.notes ?? "", dueDate: dueDateString,
-      isCompleted: self.isCompleted, priority: reminderPriority.displayString,
+      isCompleted: self.isCompleted, isFlagged: isFlaggedOverride ?? false,
+      priority: reminderPriority.displayString,
       completionDate: completionDateString, isRecurring: isRecurring,
       recurrenceRule: recurrenceRuleDescription ?? "",
       list: calendar.toStruct(defaultCalendarId: nil), location: location,
       creationDate: self.creationDate)
   }
+}
+
+func setReminderFlagged(reminderId: String, isFlagged: Bool) async throws {
+  let escapedReminderId = reminderId
+    .replacingOccurrences(of: "\\", with: "\\\\")
+    .replacingOccurrences(of: "\"", with: "\\\"")
+  let flagValue = isFlagged ? "true" : "false"
+  let script = """
+    tell application "Reminders"
+      set matchingReminders to reminders whose id is "\(escapedReminderId)"
+      if (count of matchingReminders) is 0 then error "Reminder not found"
+      repeat with matchingReminder in matchingReminders
+        set flagged of matchingReminder to \(flagValue)
+      end repeat
+    end tell
+    """
+
+  try await runAppleScript(script)
+}
+
+func getFlaggedReminderIds() async -> Set<String> {
+  let script = """
+    tell application "Reminders"
+      set flaggedIds to id of reminders whose flagged is true
+      set AppleScript's text item delimiters to linefeed
+      return flaggedIds as text
+    end tell
+    """
+
+  guard let output = try? await runAppleScript(script) else {
+    return []
+  }
+
+  return Set(output.components(separatedBy: .newlines).filter { !$0.isEmpty })
+}
+
+@discardableResult
+func runAppleScript(_ script: String) async throws -> String {
+  let process = Process()
+  let outputPipe = Pipe()
+  process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+  process.arguments = ["-e", script]
+  process.standardOutput = outputPipe
+
+  try process.run()
+
+  try await withThrowingTaskGroup(of: Void.self) { group in
+    group.addTask {
+      process.waitUntilExit()
+      if process.terminationStatus != 0 {
+        throw RemindersError.other
+      }
+    }
+
+    group.addTask {
+      let timeoutDate = Date().addingTimeInterval(8)
+      while process.isRunning && Date() < timeoutDate {
+        try Task.checkCancellation()
+        usleep(100_000)
+      }
+      if process.isRunning {
+        process.terminate()
+      }
+      throw RemindersError.other
+    }
+
+    try await group.next()
+    group.cancelAll()
+  }
+
+  let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
+  return String(data: outputData, encoding: .utf8) ?? ""
 }
 
 extension EKAlarm {

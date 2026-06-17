@@ -17,6 +17,7 @@ struct Reminder: Codable {
   let notes: String
   let dueDate: String?
   let isCompleted: Bool
+  let isFlagged: Bool
   let priority: String
   let completionDate: String
   let isRecurring: Bool
@@ -67,8 +68,11 @@ enum RemindersError: Error {
   guard let reminders = await eventStore.fetchReminders(matching: predicate) else {
     throw RemindersError.noRemindersFound
   }
+  let flaggedReminderIds = await getFlaggedReminderIds()
 
-  let remindersData = reminders.prefix(1000).map { $0.toStruct() }
+  let remindersData = reminders.prefix(1000).map {
+    $0.toStruct(isFlaggedOverride: flaggedReminderIds.contains($0.calendarItemIdentifier))
+  }
 
   let calendars = eventStore.calendars(for: .reminder)
   let defaultList = eventStore.defaultCalendarForNewReminders()
@@ -107,8 +111,11 @@ enum RemindersError: Error {
   guard let reminders = reminders else {
     throw RemindersError.noRemindersFound
   }
+  let flaggedReminderIds = await getFlaggedReminderIds()
 
-  let remindersData = reminders.prefix(1000).map { $0.toStruct() }
+  let remindersData = reminders.prefix(1000).map {
+    $0.toStruct(isFlaggedOverride: flaggedReminderIds.contains($0.calendarItemIdentifier))
+  }
   return remindersData
 }
 
@@ -118,6 +125,7 @@ struct NewReminder: Decodable {
   let notes: String?
   let url: String?
   let dueDate: String?
+  let isFlagged: Bool?
   let priority: String?
   let recurrence: Recurrence?
   let address: String?
@@ -260,7 +268,10 @@ struct Recurrence: Decodable {
 
   do {
     try eventStore.save(reminder, commit: true)
-    return reminder.toStruct()
+    if newReminder.isFlagged == true {
+      try await setReminderFlagged(reminderId: reminder.calendarItemIdentifier, isFlagged: true)
+    }
+    return reminder.toStruct(isFlaggedOverride: newReminder.isFlagged)
   } catch {
     throw RemindersError.unableToSaveReminder
   }
@@ -355,6 +366,15 @@ struct SetPriorityStatusPayload: Decodable {
   } catch {
     throw RemindersError.unableToSaveReminder
   }
+}
+
+struct SetFlaggedStatusPayload: Decodable {
+  let reminderId: String
+  let isFlagged: Bool
+}
+
+@raycast func setFlaggedStatus(payload: SetFlaggedStatusPayload) async throws {
+  try await setReminderFlagged(reminderId: payload.reminderId, isFlagged: payload.isFlagged)
 }
 
 struct SetDueDatePayload: Decodable {
@@ -493,11 +513,12 @@ struct UpdateReminderPayload: Decodable {
   let notes: String?
   let dueDate: String?
   let priority: String?
+  let isFlagged: Bool?
   let isCompleted: Bool?
   let recurrence: Recurrence?
 }
 
-@raycast func updateReminder(payload: UpdateReminderPayload) throws {
+@raycast func updateReminder(payload: UpdateReminderPayload) async throws {
   let eventStore = EKEventStore()
 
   guard let item = eventStore.calendarItem(withIdentifier: payload.reminderId) as? EKReminder else {
@@ -550,6 +571,10 @@ struct UpdateReminderPayload: Decodable {
     default:
       item.priority = Int(EKReminderPriority.none.rawValue)
     }
+  }
+
+  if let isFlagged = payload.isFlagged {
+    try await setReminderFlagged(reminderId: payload.reminderId, isFlagged: isFlagged)
   }
 
   if let recurrence = payload.recurrence {

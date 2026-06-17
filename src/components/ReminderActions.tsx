@@ -3,6 +3,7 @@ import { MutatePromise } from "@raycast/utils";
 import { format } from "date-fns";
 import {
   deleteReminder,
+  setFlaggedStatus,
   setPriorityStatus,
   toggleCompletionStatus,
   setDueDate as setReminderDueDate,
@@ -100,6 +101,38 @@ export default function ReminderActions({ reminder, listId, viewProps, mutate }:
       await showToast({
         style: Toast.Style.Failure,
         title: `Unable to set priority`,
+      });
+    }
+  }
+
+  async function setFlagged(isFlagged: boolean) {
+    try {
+      await mutate(setFlaggedStatus({ reminderId: reminder.id, isFlagged }), {
+        optimisticUpdate(data) {
+          if (!data) return;
+
+          return {
+            ...data,
+            reminders: data.reminders.map((r) => {
+              if (reminder.id === r.id) {
+                return { ...r, isFlagged };
+              }
+
+              return r;
+            }),
+          };
+        },
+      });
+      await showToast({
+        style: Toast.Style.Success,
+        title: isFlagged ? "Flagged reminder" : "Removed flag",
+        message: reminder.title,
+      });
+    } catch {
+      await showToast({
+        style: Toast.Style.Failure,
+        title: isFlagged ? "Unable to flag reminder" : "Unable to remove flag",
+        message: reminder.title,
       });
     }
   }
@@ -259,6 +292,13 @@ export default function ReminderActions({ reminder, listId, viewProps, mutate }:
           <Action title="Medium" icon={getPriorityIcon("medium")} onAction={() => setPriority("medium")} />
           <Action title="Low" icon={getPriorityIcon("low")} onAction={() => setPriority("low")} />
         </ActionPanel.Submenu>
+
+        <Action
+          title={reminder.isFlagged ? "Remove Flag" : "Flag Reminder"}
+          icon={Icon.Flag}
+          onAction={() => setFlagged(!reminder.isFlagged)}
+          shortcut={{ modifiers: ["cmd", "shift"], key: "f" }}
+        />
 
         <Action.PickDate
           title="Set Due Date"

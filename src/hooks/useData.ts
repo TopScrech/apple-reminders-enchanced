@@ -17,6 +17,7 @@ export type Reminder = {
   notes: string;
   dueDate: string | null;
   isCompleted: boolean;
+  isFlagged: boolean;
   priority: Priority;
   completionDate: string;
   isRecurring: string;

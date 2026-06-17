@@ -10,6 +10,7 @@ export type CreateReminderFieldId =
   | "recurrence"
   | "list"
   | "priority"
+  | "flagged"
   | "location";
 
 export type CreateReminderFieldDefinition = {
@@ -82,6 +83,12 @@ export const createReminderFieldDefinitions: CreateReminderFieldDefinition[] = [
     icon: Icon.ExclamationMark,
   },
   {
+    id: "flagged",
+    title: "Flagged",
+    description: "Mark new reminders as flagged.",
+    icon: Icon.Flag,
+  },
+  {
     id: "location",
     title: "Location",
     description: "Location-based reminder fields and saved locations.",
@@ -142,6 +149,7 @@ export const defaultCreateReminderFormLayout: CreateReminderFormLayoutItem[] = [
   { type: "field", id: "recurrence", enabled: true },
   { type: "field", id: "list", enabled: true },
   { type: "field", id: "priority", enabled: true },
+  { type: "field", id: "flagged", enabled: true },
   createSeparatorItem(),
   { type: "field", id: "location", enabled: true },
 ];

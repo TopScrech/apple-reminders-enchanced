@@ -34,6 +34,7 @@ export type NewReminder = {
   notes?: string;
   url?: string;
   dueDate?: string;
+  isFlagged?: boolean;
   priority?: string;
   recurrence?: {
     frequency: Frequency;
@@ -51,6 +52,7 @@ type CreateReminderValues = {
   url: string;
   dueDate: Date | null;
   priority: string;
+  isFlagged: boolean;
   listId: string;
   isRecurring: boolean;
   frequency: string;
@@ -178,6 +180,10 @@ export function CreateReminderForm({ draftValues, listId, mutate }: CreateRemind
         };
       }
 
+      if (values.isFlagged) {
+        payload.isFlagged = true;
+      }
+
       if (values.priority) {
         payload.priority = values.priority;
       }
@@ -254,6 +260,7 @@ export function CreateReminderForm({ draftValues, listId, mutate }: CreateRemind
       url: draftValues?.url ?? "",
       dueDate: initialDueDate,
       priority: draftValues?.priority,
+      isFlagged: draftValues?.isFlagged ?? false,
       listId: initialListId,
       isRecurring: draftValues?.isRecurring ?? false,
       frequency: draftValues?.frequency,
@@ -399,6 +406,8 @@ export function CreateReminderForm({ draftValues, listId, mutate }: CreateRemind
             <Form.Dropdown.Item title="Low" value="low" icon={getPriorityIcon("low")} />
           </Form.Dropdown>,
         ];
+      case "flagged":
+        return [<Form.Checkbox key="isFlagged" {...itemProps.isFlagged} label="Flagged" />];
       case "location":
         return [
           ...(hasLocations

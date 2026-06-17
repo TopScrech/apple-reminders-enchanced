@@ -25,6 +25,10 @@ type Input = {
    */
   priority?: "high" | "medium" | "low";
   /**
+   * Whether the reminder is flagged.
+   */
+  isFlagged?: boolean;
+  /**
    * Whether the reminder is completed.
    */
   isCompleted?: boolean;
